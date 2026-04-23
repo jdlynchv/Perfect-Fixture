@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Perfect Fixture — Maritime Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- PRICE TICKER -->
+  <div class="ticker">
+    <div class="ticker-inner" id="ticker-inner"></div>
+  </div>
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="logo">
+      <div class="logo-icon">⚓</div>
+      <div class="logo-text">THE <span>PERFECT</span> FIXTURE</div>
+    </div>
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span id="vessel-count">12,847</span> VESSELS TRACKED
+    </div>
+    <div class="topbar-nav" id="topbar-nav">
+      <button onclick="showSection('dashboard')">Dashboard</button>
+      <button onclick="showSection('voyage')">Voyage Calc</button>
+      <button onclick="showSection('vessels')">Vessel Intel</button>
+      <button onclick="showSection('cargo')">Cargo Mkt</button>
+      <button onclick="showSection('fixtures')">Fixtures</button>
+      <button onclick="showSection('market')">Market Intel</button>
+      <button onclick="showSection('risk')">Risk & Alerts</button>
+    </div>
+    <div class="topbar-right">
+      <span id="api-health" title="Checking API..." style="font-size:18px;cursor:help">⬤</span>
+      <div class="alert-badge" onclick="showAlertModal()">
+        🔔<div class="badge-count">4</div>
+      </div>
+      <div class="user-chip">
+        <div class="user-avatar">JR</div>
+        <span class="user-name">J. Rodriguez</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-layout">
+    <div class="main-content" id="main-content">
+      <div style="display:flex;align-items:center;justify-content:center;height:200px;color:var(--text-secondary)">
+        Loading…
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ALERT MODAL -->
+<div class="modal-overlay" id="alert-modal">
+  <div class="modal">
+    <span class="modal-close" onclick="closeModal('alert-modal')">✕</span>
+    <div class="modal-title">🔔 Active Risk Alerts</div>
+    <div id="modal-alerts"></div>
+  </div>
+</div>
+
+<!-- NOTIFICATION TOAST -->
+<div class="notification" id="notification">
+  <span class="notification-icon" id="notification-icon">✓</span>
+  <span id="notification-msg"></span>
+</div>
+
+<!-- JS: libs first, then sections, then app -->
+<script src="/js/lib/mockData.js"></script>
+<script src="/js/lib/api.js"></script>
+<script src="/js/lib/utils.js"></script>
+<script src="/js/sections/dashboard.js"></script>
+<script src="/js/sections/voyage.js"></script>
+<script src="/js/sections/vessels.js"></script>
+<script src="/js/sections/sections.js"></script>
+<script src="/js/app.js"></script>
+
+</body>
+</html>
