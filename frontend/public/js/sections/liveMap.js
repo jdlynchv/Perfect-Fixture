@@ -1,21 +1,4 @@
-/**
- * Live Map Section  —  frontend/public/js/sections/liveMap.js
- * ─────────────────────────────────────────────────────────────
- * Renders a Mapbox GL JS world map with live AIS vessel dots.
- * Polls GET /api/v1/map/vessels every 10 seconds.
- * Clicking a dot opens a detail panel.
- *
- * REQUIRES: Mapbox GL JS loaded in index.html (see instructions
- * in README_MAP.md). Add these two lines to <head>:
- *   <link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet">
- *   <script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"></script>
- *
- * Then add your Mapbox public token to .env:
- *   MAPBOX_TOKEN=pk.eyJ1...
- *
- * And expose it via a new GET /api/v1/map/config endpoint (see
- * server/routes/map.js — already added).
- */
+
 
 // ── Colour palette matching the platform design system ─────────
 const SHIP_COLORS = {
@@ -164,73 +147,9 @@ async function initMap() {
   window._markerLayer = L.layerGroup().addTo(mapInstance);
   document.getElementById('map-loading').style.display = 'none';
   startPolling();
-
-function setupMapLayers() {
-  // Source: GeoJSON updated on each poll
-  mapInstance.addSource('vessels', {
-    type: 'geojson',
-    data: { type: 'FeatureCollection', features: [] },
-  });
-
-  // Circle layer — base dots
-  mapInstance.addLayer({
-    id: 'vessels-layer',
-    type: 'circle',
-    source: 'vessels',
-    paint: {
-      'circle-radius': [
-        'interpolate', ['linear'], ['zoom'],
-        2, 2.5,
-        6, 4,
-        10, 7
-      ],
-      'circle-color': ['get', 'color'],
-      'circle-opacity': 0.85,
-      'circle-stroke-width': [
-        'interpolate', ['linear'], ['zoom'],
-        2, 0,
-        5, 0.5,
-        8, 1
-      ],
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-opacity': 0.5,
-    },
-  });
-
-  // Selected vessel highlight
-  mapInstance.addLayer({
-    id: 'vessel-selected',
-    type: 'circle',
-    source: 'vessels',
-    filter: ['==', ['get', 'mmsi'], ''],
-    paint: {
-      'circle-radius': [
-        'interpolate', ['linear'], ['zoom'],
-        2, 5,
-        8, 10
-      ],
-      'circle-color': '#ffffff',
-      'circle-opacity': 0,
-      'circle-stroke-width': 2,
-      'circle-stroke-color': '#ffffff',
-      'circle-stroke-opacity': 0.9,
-    },
-  });
-
-  // Click handler
-  mapInstance.on('click', 'vessels-layer', (e) => {
-    const props = e.features[0].properties;
-    selectVessel(props.mmsi);
-  });
-
-  // Cursor
-  mapInstance.on('mouseenter', 'vessels-layer', () => {
-    mapInstance.getCanvas().style.cursor = 'pointer';
-  });
-  mapInstance.on('mouseleave', 'vessels-layer', () => {
-    mapInstance.getCanvas().style.cursor = '';
-  });
 }
+
+
 
 // ── Polling ───────────────────────────────────────────────────
 function startPolling() {
@@ -262,36 +181,29 @@ async function fetchVessels() {
 }
 
 function updateMapSource(vessels) {
-  if (!mapInstance) return;
-  const src = mapInstance.getSource('vessels');
-  if (!src) return;
-
-  const features = vessels.map(v => ({
-    type: 'Feature',
-    geometry: { type: 'Point', coordinates: [v.lng, v.lat] },
-    properties: {
-      mmsi:      String(v.mmsi),
-      name:      v.name || 'Unknown',
-      speed:     v.speed || 0,
-      heading:   v.heading || 0,
-      status:    v.status || 'laden',
-      typeLabel: v.typeLabel || v.type || 'Other',
-      dest:      v.dest || '—',
-      color:     SHIP_COLORS[v.typeLabel] || SHIP_COLORS[v.type] || '#7a98c0',
-    },
-  }));
-
-  src.setData({ type: 'FeatureCollection', features });
+  if (!mapInstance || !window._markerLayer) return;
+  window._markerLayer.clearLayers();
+  vessels.forEach(function(v) {
+    var color = SHIP_COLORS[v.typeLabel] || SHIP_COLORS[v.type] || '#7a98c0';
+    var icon = L.divIcon({
+      className: '',
+      html: '<div style="width:8px;height:8px;border-radius:50%;background:' + color + ';opacity:0.85;border:1px solid rgba(255,255,255,0.3)"></div>',
+      iconSize: [8, 8],
+      iconAnchor: [4, 4],
+    });
+    var marker = L.marker([v.lat, v.lng], { icon: icon });
+    marker.on('click', function() { selectVessel(String(v.mmsi)); });
+    marker.bindTooltip('<strong>' + (v.name || 'Unknown') + '</strong><br>' + (v.typeLabel || 'Unknown') + ' · ' + (v.speed || 0) + ' kn', { direction: 'top' });
+    window._markerLayer.addLayer(marker);
+  });
 }
+
 
 // ── Vessel selection ──────────────────────────────────────────
 function selectVessel(mmsi) {
   selectedVessel = mmsi;
 
   // Highlight on map
-  if (mapInstance) {
-    mapInstance.setFilter('vessel-selected', ['==', ['get', 'mmsi'], String(mmsi)]);
-  }
 
   // Find vessel data
   const v = allVessels.find(x => String(x.mmsi) === String(mmsi));
@@ -351,12 +263,10 @@ function timeSince(ts) {
 }
 
 // ── Map controls ──────────────────────────────────────────────
-function liveMapZoomIn()  { mapInstance?.zoomIn();  }
-function liveMapZoomOut() { mapInstance?.zoomOut(); }
-function liveMapReset()   { mapInstance?.flyTo({ center:[10,30], zoom:2 }); }
-function liveMapFlyTo(lng, lat) {
-  mapInstance?.flyTo({ center:[lng,lat], zoom:6, duration:1500 });
-}
+function liveMapZoomIn()  { if (mapInstance) mapInstance.zoomIn(); }
+function liveMapZoomOut() { if (mapInstance) mapInstance.zoomOut(); }
+function liveMapReset()   { if (mapInstance) mapInstance.setView([20, 10], 2); }
+function liveMapFlyTo(lng, lat) { if (mapInstance) mapInstance.flyTo([lat, lng], 6); }
 
 function setMapFilter(type) {
   activeFilter = type;
@@ -370,35 +280,8 @@ function setMapFilter(type) {
   fetchVessels();
 }
 
-// ── Canvas fallback (no Mapbox token) ─────────────────────────
-function initCanvasFallback() {
-  const container = document.getElementById('live-map');
-  container.innerHTML = `<canvas id="map-canvas" style="width:100%;height:100%"></canvas>`;
-  const canvas  = document.getElementById('map-canvas');
-  canvas.width  = container.clientWidth;
-  canvas.height = container.clientHeight;
-  const ctx = canvas.getContext('2d');
 
-  drawCanvasMap(ctx, canvas);
-  startPolling();
 
-  // Re-draw on new data — hook into fetchVessels
-  const origFetch = window.fetchVessels;
-  // Redraws automatically as allVessels is updated
-  setInterval(() => drawCanvasMap(ctx, canvas), 5_000);
-}
-
-function drawCanvasMap(ctx, canvas) {
-  const W = canvas.width, H = canvas.height;
-  ctx.fillStyle = '#04080f';
-  ctx.fillRect(0, 0, W, H);
-
-  // Simple equirectangular projection
-  function project(lat, lng) {
-    const x = (lng + 180) / 360 * W;
-    const y = (90 - lat)  / 180 * H;
-    return [x, y];
-  }
 
   // Draw grid
   ctx.strokeStyle = '#0a1628';
@@ -430,39 +313,11 @@ function drawCanvasMap(ctx, canvas) {
   });
 }
 
-// ── Error display ─────────────────────────────────────────────
-function showMapError(msg) {
-  const loading = document.getElementById('map-loading');
-  if (loading) loading.innerHTML = `
-    <div style="color:var(--accent-amber);font-size:13px;padding:20px;text-align:center">
-      ⚠ ${msg}
-    </div>`;
-}
 
-function showSetupInstructions() {
-  const mc = document.getElementById('main-content');
-  const extra = document.createElement('div');
-  extra.className = 'card reveal';
-  extra.style.marginTop = '12px';
-  extra.innerHTML = `
-    <div class="card-label">📋 Mapbox Setup (one-time)</div>
-    <div style="font-size:12px;color:var(--text-secondary);line-height:1.7;margin-top:8px">
-      <b style="color:var(--text-primary)">1.</b> Get a free token at
-        <a href="https://account.mapbox.com" target="_blank" style="color:var(--accent-teal)">account.mapbox.com</a><br>
-      <b style="color:var(--text-primary)">2.</b> Add to <code style="color:var(--accent-teal)">.env</code>:
-        <code style="color:var(--accent-teal)">MAPBOX_TOKEN=pk.eyJ1…</code><br>
-      <b style="color:var(--text-primary)">3.</b> Add to <code>frontend/public/index.html</code> <code>&lt;head&gt;</code>:<br>
-      <pre style="background:var(--bg-base);padding:10px;border-radius:4px;margin:6px 0;overflow-x:auto;font-size:11px;color:var(--accent-teal)">&lt;link href="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.css" rel="stylesheet"&gt;
-&lt;script src="https://api.mapbox.com/mapbox-gl-js/v3.3.0/mapbox-gl.js"&gt;&lt;/script&gt;</pre>
-      <b style="color:var(--text-primary)">4.</b> The canvas fallback above is active in the meantime.
-    </div>
-  `;
-  mc.appendChild(extra);
-  Utils.triggerReveal(mc);
-}
 
 // Clean up when navigating away
 function destroyLiveMap() {
   clearInterval(pollInterval);
-  if (mapInstance) { mapInstance.remove(); mapInstance = null; }
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; window._markerLayer = null; }
 }
+
