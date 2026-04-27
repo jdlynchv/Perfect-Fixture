@@ -283,38 +283,6 @@ function setMapFilter(type) {
 
 
 
-  // Draw grid
-  ctx.strokeStyle = '#0a1628';
-  ctx.lineWidth = 0.5;
-  for (let lng = -180; lng <= 180; lng += 30) {
-    const [x] = project(0, lng);
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-  }
-  for (let lat = -90; lat <= 90; lat += 30) {
-    const [,y] = project(lat, 0);
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-  }
-
-  // Label
-  ctx.fillStyle = '#1a3054';
-  ctx.font = '11px JetBrains Mono, monospace';
-  ctx.fillText('⚠ Canvas fallback — add MAPBOX_TOKEN for full map', 10, 20);
-
-  // Draw vessels
-  (allVessels || []).forEach(v => {
-    const [x, y] = project(v.lat, v.lng);
-    const color = SHIP_COLORS[v.typeLabel] || SHIP_COLORS[v.type] || '#7a98c0';
-    ctx.beginPath();
-    ctx.arc(x, y, 2, 0, Math.PI * 2);
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.8;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-  });
-}
-
-
-
 // Clean up when navigating away
 function destroyLiveMap() {
   clearInterval(pollInterval);
