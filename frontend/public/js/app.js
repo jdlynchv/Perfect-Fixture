@@ -17,6 +17,7 @@ function showSection(id) {
     fixtures:  renderFixtures,
     market:    renderMarket,
     risk:      renderRisk,
+    liveMap:   (mc) => { if (typeof destroyLiveMap === 'function') destroyLiveMap(); renderLiveMap(mc); },
   };
 
   const fn = renderers[id];
