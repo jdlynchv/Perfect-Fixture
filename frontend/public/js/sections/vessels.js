@@ -86,7 +86,7 @@ function renderVesselTable(vessels) {
         <td>${statusBadge(v.status)}</td>
         <td style="color:var(--text-secondary)">${v.owner || '—'}</td>
         <td><button class="btn-secondary" style="font-size:10px;padding:4px 10px"
-          onclick="Utils.notify('Contact sent to ${(v.owner||'').replace(/'/g,'\\'')}')">Contact</button></td>
+         onclick="Utils.notify('Contact sent to ' + (v.owner||''))">Contact</button>
       </tr>`).join('')}
     </tbody>
   </table>`;
