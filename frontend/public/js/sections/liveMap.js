@@ -141,49 +141,29 @@ async function renderLiveMap(mc) {
 // ── Map initialisation ─────────────────────────────────────────
 async function initMap() {
   // Check if Mapbox GL is available
-  if (typeof mapboxgl === 'undefined') {
-    showMapError('Mapbox GL JS not loaded. See setup instructions below.');
-    showSetupInstructions();
-    return;
+  if (typeof L === 'undefined') {
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    await new Promise(function(resolve) {
+      var script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = resolve;
+      document.head.appendChild(script);
+    });
   }
 
-  // Fetch token from server
-  let token;
-  try {
-    const cfg = await fetch('/api/v1/map/config').then(r => r.json());
-    token = cfg.mapboxToken;
-  } catch(e) {
-    showMapError('Could not fetch map config from server.');
-    return;
-  }
+  mapInstance = L.map('live-map', { center: [20, 10], zoom: 2, zoomControl: false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd',
+    maxZoom: 19,
+  }).addTo(mapInstance);
 
-  if (!token) {
-    showMapError('MAPBOX_TOKEN not configured — using canvas fallback.');
-    initCanvasFallback();
-    return;
-  }
-
-  mapboxgl.accessToken = token;
-
-  mapInstance = new mapboxgl.Map({
-    container: 'live-map',
-    style: 'mapbox://styles/mapbox/dark-v11',
-    center: [10, 30],
-    zoom: 2,
-    projection: 'mercator',
-    antialias: true,
-  });
-
-  mapInstance.on('load', () => {
-    document.getElementById('map-loading').style.display = 'none';
-    setupMapLayers();
-    startPolling();
-  });
-
-  mapInstance.on('error', e => {
-    showMapError('Map error: ' + e.error?.message);
-  });
-}
+  window._markerLayer = L.layerGroup().addTo(mapInstance);
+  document.getElementById('map-loading').style.display = 'none';
+  startPolling();
 
 function setupMapLayers() {
   // Source: GeoJSON updated on each poll
