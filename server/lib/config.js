@@ -11,6 +11,7 @@ const config = {
     marineTraffic: process.env.MARINETRAFFIC_API_KEY || null,
     aishub:        process.env.AISHUB_USERNAME        || null,
     vesselFinder:  process.env.VESSELFINDER_API_KEY   || null,
+    aisStream: process.env.AISSTREAM_API_KEY || null,
 
     // Fuel / Oil
     shipAndBunker: process.env.SHIPANDBUNKER_API_KEY  || null,
