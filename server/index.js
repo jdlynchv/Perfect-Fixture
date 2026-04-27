@@ -1,4 +1,6 @@
 require('dotenv').config();
+const mapRoutes  = require('./routes/map');
+const aisStream  = require('./services/aisStreamService');
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
@@ -27,6 +29,7 @@ app.use('/api/', limiter);
 app.use(express.static(path.join(__dirname, '../frontend/public')));
 
 // ── API Routes ────────────────────────────────────────────────
+app.use('/api/v1/map', mapRoutes);
 app.use('/api/v1/vessels',  vesselRoutes);
 app.use('/api/v1/voyage',   voyageRoutes);
 app.use('/api/v1/market',   marketRoutes);
@@ -65,6 +68,7 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
+  aisStream.start();
   console.log(`\n🚢  The Perfect Fixture — server running`);
   console.log(`    http://localhost:${PORT}\n`);
 });
